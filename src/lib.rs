@@ -95,69 +95,6 @@ mod test_caplog {
     use std::{thread, time::Duration};
 
     #[test]
-    fn test_logs_are_cleared_when_caplog_goes_out_of_scope() {
-        {
-            let _c = CapLog::new();
-
-            info!("foobar");
-            assert_eq!(LOG_RECORDS.with(|records| (records.borrow()).len()), 1);
-
-            info!("baz");
-            assert_eq!(LOG_RECORDS.with(|records| (records.borrow()).len()), 2);
-        }
-
-        assert_eq!(LOG_RECORDS.with(|records| (records.borrow()).len()), 0);
-    }
-
-    #[test]
-    fn test_captured_logs_are_not_shared_between_threads() {
-        for _ in 0..16 {
-            thread::spawn(|| {
-                let _c = CapLog::new();
-
-                info!("foobar");
-                assert_eq!(LOG_RECORDS.with(|records| (records.borrow()).len()), 1);
-
-                thread::sleep(Duration::from_millis(5));
-
-                info!("baz");
-                assert_eq!(LOG_RECORDS.with(|records| (records.borrow()).len()), 2);
-            });
-        }
-    }
-
-    #[test]
-    fn test_message_contains_the_formatted_message() {
-        let c = CapLog::new();
-
-        info!("{} + {} = {:.3}", 0.1, 0.2, 0.1 + 0.2);
-
-        assert_eq!(c.find(|_| true)[0].msg, "0.1 + 0.2 = 0.300");
-    }
-
-    #[test]
-    fn test_captured_log_contains_all_relevant_metadata() {
-        let c = CapLog::new();
-
-        info!(target: "target", "test");
-        let line = line!() - 1;
-
-        let record = &c.find(|_| true)[0];
-
-        assert_eq!(
-            record,
-            &CapRecord {
-                level: Level::Info,
-                target: "target".to_string(),
-                msg: "test".to_string(),
-                line: Some(line),
-                module_path: Some(module_path!().to_string()),
-                file: Some(file!().to_string()),
-            }
-        )
-    }
-
-    #[test]
     fn test_all_levels_are_captured() {
         let c = CapLog::new();
 
@@ -218,6 +155,37 @@ mod test_caplog {
     }
 
     #[test]
+    fn test_message_contains_the_formatted_message() {
+        let c = CapLog::new();
+
+        info!("{} + {} = {:.3}", 0.1, 0.2, 0.1 + 0.2);
+
+        assert_eq!(c.find(|_| true)[0].msg, "0.1 + 0.2 = 0.300");
+    }
+
+    #[test]
+    fn test_captured_log_contains_all_relevant_metadata() {
+        let c = CapLog::new();
+
+        info!(target: "target", "test");
+        let line = line!() - 1;
+
+        let record = &c.find(|_| true)[0];
+
+        assert_eq!(
+            record,
+            &CapRecord {
+                level: Level::Info,
+                target: "target".to_string(),
+                msg: "test".to_string(),
+                line: Some(line),
+                module_path: Some(module_path!().to_string()),
+                file: Some(file!().to_string()),
+            }
+        )
+    }
+
+    #[test]
     fn test_clear_resets_the_captured_logs() {
         let mut c = CapLog::new();
 
@@ -231,5 +199,37 @@ mod test_caplog {
 
         info!("foobar");
         assert_eq!(c.find(|_| true).len(), 1);
+    }
+
+    #[test]
+    fn test_logs_are_cleared_when_caplog_goes_out_of_scope() {
+        {
+            let _c = CapLog::new();
+
+            info!("foobar");
+            assert_eq!(LOG_RECORDS.with(|records| (records.borrow()).len()), 1);
+
+            info!("baz");
+            assert_eq!(LOG_RECORDS.with(|records| (records.borrow()).len()), 2);
+        }
+
+        assert_eq!(LOG_RECORDS.with(|records| (records.borrow()).len()), 0);
+    }
+
+    #[test]
+    fn test_captured_logs_are_not_shared_between_threads() {
+        for _ in 0..16 {
+            thread::spawn(|| {
+                let _c = CapLog::new();
+
+                info!("foobar");
+                assert_eq!(LOG_RECORDS.with(|records| (records.borrow()).len()), 1);
+
+                thread::sleep(Duration::from_millis(5));
+
+                info!("baz");
+                assert_eq!(LOG_RECORDS.with(|records| (records.borrow()).len()), 2);
+            });
+        }
     }
 }

@@ -18,11 +18,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        if: ${{contains(runner.os,'macOS')}}
-        run: |
-          rustup component add rustfmt clippy --toolchain stable-x86_64-apple-darwin
-
       - name: Lint
         run: |
           cargo fmt -- --check
